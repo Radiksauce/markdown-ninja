@@ -301,18 +301,12 @@ func (waf *Waf) analyzeRequest(req *http.Request, wasmModule *wasmModule) (bool,
 			return true, nil
 		}
 
-		ipHostname, err := waf.resolveHostForIp(ctx, httpCtx.Client.IP)
-		if err != nil {
-			// fail open
-			logger.Error(err.Error())
-			return true, nil
-		}
-
+		hostnameForIpAddress, _ := waf.resolveHostForIp(ctx, httpCtx.Client.IP)
 		verifyBotInput := verifyBotInput{
 			IpAddress:         httpCtx.Client.IP,
 			Asn:               httpCtx.Client.ASN,
 			Bot:               analyzeRequestRes.Data.Bot,
-			IpAddressHostname: ipHostname,
+			IpAddressHostname: hostnameForIpAddress,
 		}
 		verifyBotInputWasmPtr, verifyBotInputWasmLength, err := serializeJsonToWasm(wasmCtx, wasmModule.module, wasmModule.allocate, verifyBotInput)
 		if err != nil {
