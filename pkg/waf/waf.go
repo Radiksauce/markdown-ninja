@@ -302,11 +302,21 @@ func (waf *Waf) analyzeRequest(req *http.Request, wasmModule *wasmModule) (bool,
 	return true, nil
 }
 
+// callWasmFunction calls the given WASM function using JSON to serialize/deserialize input/output
 func callWasmFunction[I, O any](ctx context.Context, wasmModule *wasmModule, wasmFunction wazeroapi.Function, input I) (O, error) {
 	var output O
 	logger := slogx.FromCtx(ctx)
 
-	// first we serialize input into JSON
+	// first we serialize the input ot JSON
+	// then we allocate WASM memory for this JSON using the module's exported alloc function.
+	//   Don't forget to free the WASM input buffer
+	// then we copy the input JSON into the WASM memoy
+	// then we call the WASM function and pass it a pointer to the buffer that we have allocated
+	// the function returns a pointer to a buffer it has allocated containing the output
+	// then we read the output buffer from WASM's memory to the host (Go) memory and free the WASM ouput buffer
+	// then we deserialize the output buffer content from JSON
+
+	// serialize input to JSON
 	inputJson, err := json.Marshal(input)
 	if err != nil {
 		return output, fmt.Errorf("error marshalling input data to JSON: %w", err)
