@@ -214,7 +214,7 @@ func (waf *Waf) Middleware(next http.Handler) http.Handler {
 		wasmModulePoolObject := waf.wasmModulePool.Get()
 		if wasmModulePoolObject == nil {
 			// fail open
-			waf.logger.Error("waf: Error getting object from wasm sync.Pool. Object is nil")
+			waf.logger.Error("waf: error getting object from wasm sync.Pool. Object is nil")
 			next.ServeHTTP(w, req)
 			return
 		}
@@ -241,15 +241,14 @@ func (waf *Waf) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// return true if allowed, false otherwise
+// returns true if the request is allowed or false otherwise
 func (waf *Waf) analyzeRequest(req *http.Request, wasmModule *wasmModule) (bool, error) {
 	ctx := req.Context()
 	httpCtx := httpctx.FromCtx(ctx)
-	logger := slogx.FromCtx(ctx)
 
 	wasmCtx := context.Background()
 
-	analyzeRequestInput := analyzeRequestInput{
+	analyzeRequestInputData := analyzeRequestInput{
 		HttpMethod:       req.Method,
 		UserAgent:        req.UserAgent(),
 		IpAddress:        httpCtx.Client.IP,
@@ -258,35 +257,9 @@ func (waf *Waf) analyzeRequest(req *http.Request, wasmModule *wasmModule) (bool,
 		HttpVersionMajor: int64(req.ProtoMajor),
 		HttpVersionMinor: int64(req.ProtoMinor),
 	}
-	analyzeRequestInputWasmPtr, analyzeRequestInputWasmLength, err := serializeJsonToWasm(wasmCtx, wasmModule.module, wasmModule.allocate, analyzeRequestInput)
+	analyzeRequestRes, err := callWasmFunction[analyzeRequestInput, analyzeRequestOutput](wasmCtx, wasmModule, wasmModule.analyzeRequest, analyzeRequestInputData)
 	if err != nil {
-		return false, fmt.Errorf("waf.analyzeRequest: serializing input for analyze_request call %w", err)
-	}
-	defer func() {
-		// This pointer was allocated by Rust so we have to deallocate it when finished
-		_, deallocateErr := wasmModule.deallocate.Call(wasmCtx, analyzeRequestInputWasmPtr, analyzeRequestInputWasmLength)
-		if deallocateErr != nil {
-			logger.Error("waf.analyzeRequest: error deallocating wasm input memory for analyze_request function call", slogx.Err(deallocateErr))
-		}
-	}()
-
-	wasmResultsAnalyzeRequest, err := wasmModule.analyzeRequest.Call(wasmCtx, analyzeRequestInputWasmPtr, analyzeRequestInputWasmLength)
-	if err != nil {
-		return false, fmt.Errorf("waf.analyzeRequest: error calling wasm function analyze_request: %w", err)
-	}
-
-	analyzeRequestOutputPtr := uint32(wasmResultsAnalyzeRequest[0] >> 32)
-	analyzeRequestOutputSize := uint32(wasmResultsAnalyzeRequest[0])
-
-	analyzeRequestRes, err := deserializeJsonFromWasm[analyzeRequestOutput](wasmModule.module, analyzeRequestOutputPtr, analyzeRequestOutputSize)
-	if err != nil {
-		return false, fmt.Errorf("waf.analyzeRequest: error unmarshalling JSON output: %w", err)
-	}
-	// This pointer was allocated by Rust so we have to deallocate it when finished
-	_, err = wasmModule.deallocate.Call(ctx, uint64(analyzeRequestOutputPtr), uint64(analyzeRequestOutputSize))
-	if err != nil {
-		logger.Error("waf.analyzeRequest: error deallocating wasm output memory", slogx.Err(err))
-		err = nil
+		return false, fmt.Errorf("waf.analyzeRequest: error calling analyze_request wasm function: %w", err)
 	}
 
 	if analyzeRequestRes.Err != nil {
@@ -303,41 +276,15 @@ func (waf *Waf) analyzeRequest(req *http.Request, wasmModule *wasmModule) (bool,
 		}
 
 		hostnameForIpAddress, _ := waf.resolveHostForIp(ctx, httpCtx.Client.IP)
-		verifyBotInput := verifyBotInput{
+		verifyBotInputData := verifyBotInput{
 			IpAddress:         httpCtx.Client.IP,
 			Asn:               httpCtx.Client.ASN,
 			Bot:               analyzeRequestRes.Data.Bot,
 			IpAddressHostname: hostnameForIpAddress,
 		}
-		verifyBotInputWasmPtr, verifyBotInputWasmLength, err := serializeJsonToWasm(wasmCtx, wasmModule.module, wasmModule.allocate, verifyBotInput)
+		verifyBotRes, err := callWasmFunction[verifyBotInput, analyzeRequestOutput](wasmCtx, wasmModule, wasmModule.verifyBot, verifyBotInputData)
 		if err != nil {
-			return false, fmt.Errorf("waf.analyzeRequest: serializing input for verify_bot call %w", err)
-		}
-		defer func() {
-			// This pointer was allocated by Rust so we have to deallocate it when finished
-			_, deallocateErr := wasmModule.deallocate.Call(wasmCtx, verifyBotInputWasmPtr, verifyBotInputWasmLength)
-			if deallocateErr != nil {
-				logger.Error("waf.analyzeRequest: error deallocating wasm input memory for verify_bot function call", slogx.Err(deallocateErr))
-			}
-		}()
-
-		wasmResultsVerifyBot, err := wasmModule.verifyBot.Call(wasmCtx, verifyBotInputWasmPtr, verifyBotInputWasmLength)
-		if err != nil {
-			return false, fmt.Errorf("waf.analyzeRequest: error calling wasm function verify_bot: %w", err)
-		}
-
-		verifyBotOutputPtr := uint32(wasmResultsVerifyBot[0] >> 32)
-		verifyBotOutputSize := uint32(wasmResultsVerifyBot[0])
-
-		verifyBotRes, err := deserializeJsonFromWasm[analyzeRequestOutput](wasmModule.module, verifyBotOutputPtr, verifyBotOutputSize)
-		if err != nil {
-			return false, fmt.Errorf("waf.analyzeRequest: error unmarshalling JSON output for verify_bot function call: %w", err)
-		}
-		// This pointer was allocated by Rust so we have to deallocate it when finished
-		_, err = wasmModule.deallocate.Call(ctx, uint64(verifyBotOutputPtr), uint64(verifyBotOutputSize))
-		if err != nil {
-			logger.Error("waf.analyzeRequest: error deallocating wasm output memory for verify_bot function call", slogx.Err(err))
-			err = nil
+			return false, fmt.Errorf("waf.analyzeRequest: error calling verify_bot wasm function: %w", err)
 		}
 
 		if verifyBotRes.Err != nil {
@@ -355,44 +302,69 @@ func (waf *Waf) analyzeRequest(req *http.Request, wasmModule *wasmModule) (bool,
 	return true, nil
 }
 
-func serializeJsonToWasm[T any](wasmCtx context.Context, wasmModule wazeroapi.Module, wasmFnAllocate wazeroapi.Function, data T) (wasmDataPtr uint64, wasmDataLength uint64, err error) {
-	dataJson, err := json.Marshal(data)
+func callWasmFunction[I, O any](ctx context.Context, wasmModule *wasmModule, wasmFunction wazeroapi.Function, input I) (O, error) {
+	var output O
+	logger := slogx.FromCtx(ctx)
+
+	// first we serialize input into JSON
+	inputJson, err := json.Marshal(input)
 	if err != nil {
-		return 0, 0, fmt.Errorf("waf.serializeJsonToWasm: error marshalling data to JSON: %w", err)
+		return output, fmt.Errorf("error marshalling input data to JSON: %w", err)
 	}
-	wasmDataLength = uint64(len(dataJson))
+	wasmInputLength := uint64(len(inputJson))
 
-	allocateResults, err := wasmFnAllocate.Call(wasmCtx, wasmDataLength)
+	// allocate WASM memory for input data
+	allocateInputResults, err := wasmModule.allocate.Call(ctx, wasmInputLength)
 	if err != nil {
-		return 0, 0, fmt.Errorf("waf.serializeJsonToWasm: error allocating memory: %w", err)
+		return output, fmt.Errorf("error allocating wasm memory for function call input: %w", err)
 	}
 
-	wasmDataPtr = allocateResults[0]
+	wasmInputPtr := allocateInputResults[0]
+	defer func() {
+		// this memory was allocated by the WASM module so we have to deallocate it when finished
+		_, deallocateErr := wasmModule.deallocate.Call(ctx, wasmInputPtr, wasmInputLength)
+		if deallocateErr != nil {
+			logger.Error("error deallocating wasm memory for function call input", slogx.Err(deallocateErr))
+		}
+	}()
 
-	// The pointer is a linear memory offset, which is where we write the data
-	if !wasmModule.Memory().Write(uint32(wasmDataPtr), dataJson) {
-		return 0, 0, fmt.Errorf("waf.analyzeRequest: Memory.Write(%d, %d) out of range of memory size %d", wasmDataPtr, wasmDataLength, wasmModule.Memory().Size())
+	// write serialized input data into wasm's memory
+	if !wasmModule.module.Memory().Write(uint32(wasmInputPtr), inputJson) {
+		return output, fmt.Errorf("error writing input data to wasm memory: Memory.Write(%d, %d) out of range of memory size %d",
+			wasmInputPtr, wasmInputLength, wasmModule.module.Memory().Size())
 	}
 
-	return wasmDataPtr, wasmDataLength, nil
-}
+	// call WASM function
+	wasmResults, err := wasmFunction.Call(ctx, wasmInputPtr, wasmInputLength)
+	if err != nil {
+		return output, fmt.Errorf("error calling wasm function: %w", err)
+	}
 
-func deserializeJsonFromWasm[T any](wasmModule wazeroapi.Module, dataPtr, dataSize uint32) (T, error) {
-	var data T
+	wasmOutputPtr := uint32(wasmResults[0] >> 32)
+	wasmBotOutputSize := uint32(wasmResults[0])
 
-	// The pointer is a linear memory offset, which is where we wrote the data.
-	dataBytes, memoryReadOk := wasmModule.Memory().Read(dataPtr, dataSize)
+	defer func() {
+		// This pointer was allocated by Rust so we have to deallocate it when finished
+		_, err = wasmModule.deallocate.Call(ctx, uint64(wasmOutputPtr), uint64(wasmBotOutputSize))
+		if err != nil {
+			logger.Error("error deallocating wasm memory for output", slogx.Err(err))
+			err = nil
+		}
+	}()
+
+	// read serialized output data from WASM memory
+	outputJSON, memoryReadOk := wasmModule.module.Memory().Read(wasmOutputPtr, wasmBotOutputSize)
 	if !memoryReadOk {
-		return data, fmt.Errorf("waf.deserializeJsonFromWasm: error reading output: Memory.Read(%d, %d) out of range of memory size %d",
-			dataPtr, dataSize, wasmModule.Memory().Size())
+		return output, fmt.Errorf("error reading output data from wasm memory: Memory.Read(%d, %d) out of range of memory size %d",
+			wasmOutputPtr, wasmBotOutputSize, wasmModule.module.Memory().Size())
 	}
 
-	err := json.Unmarshal(dataBytes, &data)
+	err = json.Unmarshal(outputJSON, &output)
 	if err != nil {
-		return data, fmt.Errorf("waf.deserializeJsonFromWasm: error unmarshalling JSON output: %w", err)
+		return output, fmt.Errorf("error unmarshalling JSON output: %w", err)
 	}
 
-	return data, nil
+	return output, nil
 }
 
 func (waf *Waf) serveBlockedResponse(res http.ResponseWriter) {
