@@ -3,6 +3,5 @@ name: "Markdown Ninja"
 description: "The easiest way to publish a website, blog and newsletter."
 
 pages:
-  - blog
   - pages
   - docs
