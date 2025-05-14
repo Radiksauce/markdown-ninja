@@ -41,6 +41,10 @@ jobs:
           make docker_build
           docker image tag ${{ env.DOCKER_IMAGE }}:latest ${{ env.DOCKER_IMAGE }}:latest-${{ matrix.arch }}
 
+      - name: Docker images info
+        run: |
+          docker images
+
       - name: Login to container registry
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
