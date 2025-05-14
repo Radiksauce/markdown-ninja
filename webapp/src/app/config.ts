@@ -25,6 +25,6 @@ export class Config {
     this.sitesPort = this.env === 'dev' ? ':4000' : '';
     this.pingooRedirectUri = [location.href.replace(/\/$/, ""), 'auth'].join('/');
     this.cmsBaseUrl = "https://cms.markdown.ninja";
-    this.githubRepository = "https://github.com/bloom42-markdown-ninja";
+    this.githubRepository = "https://github.com/bloom42/markdown-ninja";
   }
 }
