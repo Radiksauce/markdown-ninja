@@ -282,16 +282,16 @@ func (waf *Waf) analyzeRequest(req *http.Request, wasmModule *wasmModule) (bool,
 			Bot:               analyzeRequestRes.Data.Bot,
 			IpAddressHostname: hostnameForIpAddress,
 		}
-		verifyBotRes, err := callWasmFunction[verifyBotInput, analyzeRequestOutput](wasmCtx, wasmModule, wasmModule.verifyBot, verifyBotInputData)
+		verifyBotOutput, err := callWasmFunction[verifyBotInput, analyzeRequestOutput](wasmCtx, wasmModule, wasmModule.verifyBot, verifyBotInputData)
 		if err != nil {
 			return false, fmt.Errorf("waf.analyzeRequest: error calling verify_bot wasm function: %w", err)
 		}
 
-		if verifyBotRes.Err != nil {
-			return false, fmt.Errorf("waf.analyzeRequest: error verifying bot: %s", *verifyBotRes.Err)
+		if verifyBotOutput.Err != nil {
+			return false, fmt.Errorf("waf.analyzeRequest: error verifying bot: %s", *verifyBotOutput.Err)
 		}
 
-		if verifyBotRes.Data.Outcome == outcomeAllowed {
+		if verifyBotOutput.Data.Outcome == outcomeAllowed {
 			waf.allowedBotIps.Set(httpCtx.Client.IP, true, memorycache.DefaultTTL)
 			return true, nil
 		} else {
