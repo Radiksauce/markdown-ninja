@@ -1,0 +1,11 @@
+book_id: "mdninja-example-ebook"
+title: "Test book"
+subtitle: "This is an awesome subtitle"
+author: "Sylvain Kerkour"
+cover: "assets/test_cover.png"
+version: "2023.01"
+chapters:
+  - 00_preface.md
+  - 01_introduction.md
+  - 02_another_thing.md
+  - 03_conclusion.md

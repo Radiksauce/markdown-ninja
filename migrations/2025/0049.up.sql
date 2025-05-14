@@ -1,0 +1,3 @@
+ALTER TABLE pages RENAME COLUMN hash to body_hash;
+ALTER TABLE pages ADD COLUMN metadata_hash BYTEA NOT NULL DEFAULT '';
+ALTER TABLE pages ALTER COLUMN metadata_hash DROP DEFAULT;

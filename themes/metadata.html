@@ -1,0 +1,127 @@
+
+<link rel="canonical" href="{{ .Url }}">
+<!-- <link rel="alternate" hreflang="en" href="{{ .Url }}">
+<link rel="alternate" hreflang="x-default" href="{{ .Url }}"> -->
+
+<meta name="generator" content="Markdown Ninja" />
+<meta name="server" content="Markdown Ninja" />
+<meta name="robots" content="noai, noimageai" />
+<!-- Disable pinterest pining -->
+<meta name="pinterest" content="nopin" />
+<!-- <meta name="pinterest-rich-pin" content="false" /> -->
+<!-- <meta name="robots" content="noarchive /">
+<meta name="google" content="nositelinkssearchbox"> -->
+
+<!-- ICON -->
+<!--
+https://evilmartians.com/chronicles/how-to-favicon-in-2021-six-files-that-fit-most-needs
+https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Define_app_icons
+https://stackoverflow.com/questions/5110741/google-chrome-uses-wrong-size-of-favicon
+https://www.ionos.com/digitalguide/websites/web-design/favicon-size-and-dimensions/
+-->
+<link rel="icon" sizes="64x64" type="image/png" href="/icon-64.png">
+<link rel="icon" sizes="32x32" type="image/png" href="/icon-32.png">
+<link rel="icon" sizes="128x128" type="image/png" href="/icon-128.png">
+<link rel="icon" sizes="256x256" type="image/png" href="/icon-256.png" >
+<link rel="apple-touch-icon" sizes="180x180" type="image/png" href="/icon-180.png">
+
+<!-- AUTHOR -->
+<meta name="author" content="{{ .Website.Name }}">
+
+{{ if and (avail "Page" .) (.Page) }}
+  <meta name="keywords" content="{{ range $index, $tag := .Page.Tags }}{{- if gt $index 0 }}, {{ end -}}{{$tag.Name }}{{- end -}}">
+{{ end }}
+
+<!-- DESCRIPTION -->
+<meta name="description" content="{{ .Description }}">
+
+<!-- SOCIAL -->
+<!-- TODO -->
+<meta property="og:site_name" content="{{ .Website.Name }}" />
+{{ if avail "Page" . }}
+  <meta property="og:type" content="article" />
+{{ else }}
+  <meta property="og:type" content="website" />
+{{ end }}
+<meta property="og:title" content="{{ .Title }}" />
+<meta property="og:description" content="{{ .Description }}" />
+<meta property="og:url" content="{{ .Url }}" />
+<meta property="og:image" content="{{ .Website.Url }}/icon-256.png" />
+{{ if .SocialImage }}
+  <!-- <meta property="og:image" content="{{ .SocialImage }}" /> -->
+{{ end }}
+  <!-- <meta property="og:image:width" content="2000" />
+<meta property="og:image:height" content="1238" /> -->
+
+<!-- <meta property="article:publisher" content="https://www.facebook.com/FACEBOOKUSER" /> -->
+<!-- <meta property="article:author" content="https://www.facebook.com/FACEBOOKUSER" /> -->
+{{ if and (avail "Page" .) (.Page) }}
+  <meta property="article:published_time" content="{{ formatDate .Page.Date }}" />
+  <meta property="article:modified_time" content="{{ formatDate .Page.ModifiedAt}}" />
+  {{ range $index, $tag := .Page.Tags }}<meta property="article:tag" content="{{ $tag.Name }}" />
+  {{ end }}
+{{ end }}
+
+
+<!--
+  https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/abouts-cards
+  https://developer.twitter.com/en/docs/twitter-for-websites/cards/guides/getting-started
+  https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/markup
+  https://buffer.com/library/twitter-cards-guide/
+-->
+<meta name="twitter:title" content="{{ .Title }}" />
+<meta name="twitter:description" content="{{ .Description }}" />
+<meta name="twitter:url" content="{{ .Url }}" />
+{{ if .SocialImage }}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="{{ .SocialImage }}" />
+{{ else }}
+  <meta name="twitter:card" content="summary" />
+  <!-- <meta name="twitter:image" content="{{ .Website.Url }}/icon180.png" /> -->
+  <meta name="twitter:image" content="{{ .Website.Url }}/icon-256.png" />
+{{ end }}
+<!-- <meta name="twitter:site" content="@TWITTERUSER" /> -->
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "publisher": {
+    "@type": "Organization",
+    "name": "{{ .Website.Name }}",
+    "url": {{ .Website.Url }},
+    "logo": {
+      "@type": "ImageObject",
+      "url": "{{ .Website.Url }}/icon-128.png",
+      "width": 128,
+      "height": 128
+    }
+  },
+  "url": {{ .Url }},
+
+  {{ if and (avail "Page" .) (.Page) }}
+  "@type": "Article",
+  "keywords": "{{ range $index, $tag := .Page.Tags }}{{- if gt $index 0 }}, {{ end -}}{{$tag.Name }}{{- end -}}",
+  "datePublished": {{ formatDate .Page.Date }},
+  "dateModified": {{ formatDate .Page.ModifiedAt }},
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": {{ .Page.Url }}
+  },
+  {{ else }}
+  "@type": "WebSite",
+  {{ end }}
+  "headline": {{ .Title }},
+  "description": {{ .Description }}
+}
+</script>
+
+<!-- FEEDS -->
+<link rel="alternate" type="application/rss+xml" href="{{ .Website.Url }}/feed.xml" title="{{ .Website.Name }}">
+<link rel="alternate" type="application/json" href="{{ .Website.Url }}/feed.json" title="{{ .Website.Name }}">
+
+<!-- HEADER -->
+{{ .Website.Header }}
+
+<!-- TITLE -->
+<title>{{ .Title }}</title>
+

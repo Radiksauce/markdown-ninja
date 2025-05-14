@@ -1,0 +1,11 @@
+{
+  "dockerFile": "Dockerfile",
+  "extensions": [
+    "golang.Go",
+    "Vue.volar"
+  ],
+  "forwardPorts": [
+    4000,
+    4080
+  ]
+}

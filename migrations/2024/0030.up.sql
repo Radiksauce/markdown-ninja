@@ -1,0 +1,1 @@
+DROP INDEX index_sessions_on_created_at;

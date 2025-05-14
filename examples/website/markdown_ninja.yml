@@ -1,0 +1,42 @@
+name: "Sylvain Kerkour"
+description: "This is a test website."
+pages:
+  - blog
+  - pages
+
+ad: ''
+
+announcement: 'tesst <a href="">Link</a>'
+
+navigation:
+  primary:
+    - label: Home
+      url: "/"
+    - label: Blog
+      url: "/blog"
+    - label: About
+      url: "/about"
+    - label: Submenu
+      children:
+        - label: First
+          url: "/blog"
+        - label: Second
+          url: "/about"
+
+  secondary:
+    - label: Home
+      url: "/"
+    - label: Blog
+      url: "/blog"
+    - label: About
+      url: "/about"
+    - label: Submenu
+      children:
+        - label: First
+          url: "/blog"
+        - label: Second
+          url: "/about"
+
+redirects:
+  "/author": "/about"
+

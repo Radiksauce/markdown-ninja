@@ -1,0 +1,4 @@
+name: 'docs'
+special_pages:
+  - /tags
+  - /tags/[a-z0-9A-Z-_]*

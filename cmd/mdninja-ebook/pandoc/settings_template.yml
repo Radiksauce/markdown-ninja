@@ -1,0 +1,17 @@
+---
+title: {{ .Title }}
+{{ if .Subtitle }}subtitle: {{ .Subtitle }}{{ end }}
+author: {{ .Author }}
+# subject: "markdown"
+keywords: [{{ range $index, $tag := .Tags }}{{- if gt $index 0 }}, {{ end -}}{{ $tag }}{{- end -}}]
+language: en-US
+cover-image: {{ .Cover }}
+lof: false
+lof-own-page: true
+toc-own-page: true
+titlepage: false
+colorlinks: true
+geometry: "left=3cm, top=2cm, right=3cm, bottom=2cm"
+linestretch: 1.25
+identifier: urn:uuid:{{ .Identifier }}
+---

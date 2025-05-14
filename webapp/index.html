@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="referrer" content="no-referrer-when-downgrade" />
+
+
+    <title>Markdown Ninja</title>
+    <meta name="description" content="Markdown-first CMS for bloggers, minimalists and startups. Websites, blogs and newsletters.">
+    <!-- <meta name="description" content="Markdown-first publishing. Markdown Ninja is the easiest way to publish a website, a blog or a newsletter for a global audience."> -->
+    <link rel="icon" type="image/png" href="/webapp/markdown_ninja_logo_64.png">
+    <meta name="author" content="Markdown Ninja">
+
+
+    <meta name="robots" content="noai, noimageai" />
+    <!-- Disable pinterest pining -->
+    <meta name="pinterest" content="nopin" />
+
+
+    <link rel="preconnect" href="https://account.markdown.ninja" crossorigin />
+    <link rel="dns-prefetch" href="https//account.markdown.ninja" />
+    <link rel="preconnect" href="https://cms.markdown.ninja" crossorigin />
+    <link rel="dns-prefetch" href="https//cms.markdown.ninja" />
+
+    <link rel="alternate" type="application/rss+xml" href="https://cms.markdown.ninja/feed.xml" title="Markdown Ninja /">
+    <link rel="alternate" type="application/json" href="https://cms.markdown.ninja/feed.json" title="Markdown Ninja" />
+
+    <script>
+      window.__markdown_ninja_init_data = {{ .InitData }};
+    </script>
+
+  </head>
+  <body>
+    <div id="markdown-ninja-webapp" class="h-full w-full items-center content-center">
+      <img src="/webapp/markdown_ninja_logo.svg" id="markdown-ninja-webapp-loader"
+         width="100" height="100"
+        class="h-25 w-auto mx-auto mt-[calc(50vh-100px)]" />
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+  <!-- <script type="text/javascript">
+    // show the loader only after 300 ms if the webapp has not loaded yet
+    setTimeout(function() {
+      const loader = document.getElementById('markdown-ninja-webapp-loader');
+      if (loader) {
+        loader.style.display = 'block';
+      }
+    }, 300);
+  </script> -->
+</html>

@@ -1,0 +1,12 @@
+name: 'blog'
+special_pages:
+  - /subscribe
+  - /unsubscribe
+  - /tags
+  - /tags/[a-z0-9A-Z-_]*
+  - /blog
+  - /login
+  - /account/login
+  - /account
+  - /account/products/[a-z0-9A-Z-_]+
+  - /checkout/[a-z0-9A-Z-_]+/(complete|cancel)

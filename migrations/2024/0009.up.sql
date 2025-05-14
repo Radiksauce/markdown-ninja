@@ -1,0 +1,2 @@
+ALTER TABLE websites ADD COLUMN robots_txt TEXT NOT NULL DEFAULT '';
+ALTER TABLE websites ALTER COLUMN robots_txt DROP DEFAULT;

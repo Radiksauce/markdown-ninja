@@ -1,0 +1,18 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  // node_modules/mdninja-js is required otherwise vue-tsc throws typing errors...
+  "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "node_modules/mdninja-js/src/**/*"],
+  "exclude": ["src/**/__tests__/*"],
+  "compilerOptions": {
+    // "lib": ["es2021", "DOM",
+    //   "DOM.Iterable"],
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "noUnusedLocals": true,
+  },
+  "jsx": "preserve",
+  "jsxImportSource": "vue"
+}
