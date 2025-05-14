@@ -225,7 +225,8 @@ func (waf *Waf) Middleware(next http.Handler) http.Handler {
 		analyzeRequestAllowed, err := waf.analyzeRequest(req, wasmModule)
 		if err != nil {
 			// fail open
-			waf.logger.Error(err.Error())
+			waf.logger.Error(err.Error(), slog.String("user_agent", userAgent),
+				slog.String("ip_address", httpCtx.Client.IP.String()), slog.Int64("asn", httpCtx.Client.ASN))
 			next.ServeHTTP(w, req)
 			return
 		}
