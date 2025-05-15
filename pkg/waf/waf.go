@@ -26,7 +26,7 @@ import (
 	wazeroapi "github.com/tetratelabs/wazero/api"
 	"github.com/tetratelabs/wazero/experimental"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
-	"markdown.ninja/assets"
+	"markdown.ninja/pingoo-go/assets"
 	"markdown.ninja/pkg/server/httpctx"
 )
 
@@ -332,15 +332,14 @@ func callWasmFunction[I, O any](ctx context.Context, wasmModule *wasmModule, was
 	wasmInputPtr := allocateInputResults[0]
 	defer func() {
 		// this memory was allocated by the WASM module so we have to deallocate it when finished
-		_, deallocateErr := wasmModule.deallocate.Call(ctx, wasmInputPtr, wasmInputLength)
-		if deallocateErr != nil {
+		if _, deallocateErr := wasmModule.deallocate.Call(ctx, wasmInputPtr, wasmInputLength); deallocateErr != nil {
 			logger.Error("error deallocating wasm memory for function call input", slogx.Err(deallocateErr))
 		}
 	}()
 
 	// write serialized input data into wasm's memory
 	if !wasmModule.module.Memory().Write(uint32(wasmInputPtr), inputJson) {
-		return output, fmt.Errorf("error writing input data to wasm memory: Memory.Write(%d, %d) out of range of memory size %d",
+		return output, fmt.Errorf("error writing function call input data to wasm memory: Memory.Write(%d, %d) out of range of memory size %d",
 			wasmInputPtr, wasmInputLength, wasmModule.module.Memory().Size())
 	}
 
@@ -350,23 +349,22 @@ func callWasmFunction[I, O any](ctx context.Context, wasmModule *wasmModule, was
 		return output, fmt.Errorf("error calling wasm function: %w", err)
 	}
 
+	// data returned from WASM's side is returned as an allocated buffer which (pointer, length) pair is packed
+	// into an uint64. It needs to be freed after read.
+	// [ pointer (32 bits) | length (32 bits) ]
 	wasmOutputPtr := uint32(wasmResults[0] >> 32)
-	wasmBotOutputSize := uint32(wasmResults[0])
-
+	wasmOutputSize := uint32(wasmResults[0])
 	defer func() {
-		// This pointer was allocated by Rust so we have to deallocate it when finished
-		_, err = wasmModule.deallocate.Call(ctx, uint64(wasmOutputPtr), uint64(wasmBotOutputSize))
-		if err != nil {
-			logger.Error("error deallocating wasm memory for output", slogx.Err(err))
-			err = nil
+		if _, deallocateErr := wasmModule.deallocate.Call(ctx, uint64(wasmOutputPtr), uint64(wasmOutputSize)); deallocateErr != nil {
+			logger.Error("error deallocating wasm memory for function call output", slogx.Err(deallocateErr))
 		}
 	}()
 
 	// read serialized output data from WASM memory
-	outputJSON, memoryReadOk := wasmModule.module.Memory().Read(wasmOutputPtr, wasmBotOutputSize)
-	if !memoryReadOk {
-		return output, fmt.Errorf("error reading output data from wasm memory: Memory.Read(%d, %d) out of range of memory size %d",
-			wasmOutputPtr, wasmBotOutputSize, wasmModule.module.Memory().Size())
+	outputJSON, outputReadOk := wasmModule.module.Memory().Read(wasmOutputPtr, wasmOutputSize)
+	if !outputReadOk {
+		return output, fmt.Errorf("error reading function call output data from wasm memory: Memory.Read(%d, %d) out of range of memory size %d",
+			wasmOutputPtr, wasmOutputSize, wasmModule.module.Memory().Size())
 	}
 
 	err = json.Unmarshal(outputJSON, &output)

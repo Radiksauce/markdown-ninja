@@ -43,6 +43,7 @@ const navigation: NavigationItem[] = [
   { name: 'Terms of Service', to: '/terms' },
   { name: 'Privacy Policy', to: '/privacy' },
   { name: 'Contact', to: '/contact' },
+  { name: 'Feedback', to: $config.githubRepository, external: true },
   { name: 'GitHub', to: $config.githubRepository, external: true },
 ];
 

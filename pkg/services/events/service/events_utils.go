@@ -117,7 +117,7 @@ func (service *Service) parseUserAgent(userAgent string) (browser events.Browser
 	}
 
 	if (os == events.OsOther && browser == events.BrowserOther) ||
-		!strings.Contains(userAgent, "Mozilla") {
+		!strings.Contains(userAgentLowercase, "mozilla") {
 		isBot = true
 		return
 	}
